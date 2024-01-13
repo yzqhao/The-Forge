@@ -1026,8 +1026,6 @@ void createClusters(bool twoSided, const Scene* pScene, IndirectDrawIndexArgumen
 		vec3 aabbMin = vec3(INFINITY, INFINITY, INFINITY);
 		vec3 aabbMax = -aabbMin;
 
-		vec3 coneAxis = vec3(0, 0, 0);
-
 		for (int triangleIndex = 0; triangleIndex < clusterTriangleCount; ++triangleIndex)
 		{
 			const auto& triangle = triangleCache[triangleIndex];
@@ -1040,6 +1038,9 @@ void createClusters(bool twoSided, const Scene* pScene, IndirectDrawIndexArgumen
 
 		mesh->clusters[i].aabbMax = v3ToF3(aabbMax);
 		mesh->clusters[i].aabbMin = v3ToF3(aabbMin);
+
+		mesh->clusterCompacts[i].triangleCount = clusterTriangleCount;
+		mesh->clusterCompacts[i].clusterStart = clusterStart;
 	}
 }
 
