@@ -58,9 +58,6 @@ typedef struct Cluster
 {
 	float3 aabbMin, aabbMax;
 	float3 coneCenter, coneAxis;
-	float  coneAngleCosine;
-	float  distanceFromCamera;
-	bool   valid;
 } Cluster;
 
 typedef struct ClusterContainer

@@ -1036,82 +1036,10 @@ void createClusters(bool twoSided, const Scene* pScene, IndirectDrawIndexArgumen
 				aabbMin = minPerElem(aabbMin, triangle.vtx[j]);
 				aabbMax = maxPerElem(aabbMax, triangle.vtx[j]);
 			}
-
-			vec3 triangleNormal = cross(triangle.vtx[1] - triangle.vtx[0], triangle.vtx[2] - triangle.vtx[0]);
-
-			if (!(triangleNormal == vec3(0, 0, 0)))
-				triangleNormal = normalize(triangleNormal);
-
-			//coneAxis = DirectX::XMVectorAdd(coneAxis, DirectX::XMVectorNegate(triangleNormal));
-			coneAxis = coneAxis - triangleNormal;
-		}
-
-		// This is the cosine of the cone opening angle - 1 means it's 0?,
-		// we're minimizing this value (at 0, it would mean the cone is 90?
-		// open)
-		float coneOpening = 1;
-		// dont cull two sided meshes
-		bool validCluster = !twoSided;
-
-		const vec3 center = (aabbMin + aabbMax) / 2;
-		// if the axis is 0 then we have a invalid cluster
-		if (coneAxis == vec3(0, 0, 0))
-			validCluster = false;
-
-		coneAxis = normalize(coneAxis);
-
-		float t = -INFINITY;
-
-		// cant find a cluster for 2 sided objects
-		if (validCluster)
-		{
-			// We nee a second pass to find the intersection of the line center + t * coneAxis with the plane defined by each triangle
-			for (int triangleIndex = 0; triangleIndex < clusterTriangleCount; ++triangleIndex)
-			{
-				const Triangle& triangle = triangleCache[triangleIndex];
-				// Compute the triangle plane from the three vertices
-
-				const vec3 triangleNormal = normalize(cross(triangle.vtx[1] - triangle.vtx[0], triangle.vtx[2] - triangle.vtx[0]));
-
-				const float directionalPart = dot(coneAxis, -triangleNormal);
-
-				if (directionalPart <= 0)    //AMD BUG?: changed to <= 0 because directionalPart is used to divide a quantity
-				{
-					// No solution for this cluster - at least two triangles are facing each other
-					validCluster = false;
-					break;
-				}
-
-				// We need to intersect the plane with our cone ray which is center + t * coneAxis, and find the max
-				// t along the cone ray (which points into the empty space) See: https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
-				const float td = dot(center - triangle.vtx[0], triangleNormal) / -directionalPart;
-
-				t = max(t, td);
-
-				coneOpening = min(coneOpening, directionalPart);
-			}
 		}
 
 		mesh->clusters[i].aabbMax = v3ToF3(aabbMax);
 		mesh->clusters[i].aabbMin = v3ToF3(aabbMin);
-
-		mesh->clusters[i].coneAngleCosine = sqrtf(1 - coneOpening * coneOpening);
-		mesh->clusters[i].coneCenter = v3ToF3(center + coneAxis * t);
-		mesh->clusters[i].coneAxis = v3ToF3(coneAxis);
-
-		mesh->clusterCompacts[i].triangleCount = clusterTriangleCount;
-		mesh->clusterCompacts[i].clusterStart = clusterStart;
-
-		//#if AMD_GEOMETRY_FX_ENABLE_CLUSTER_CENTER_SAFETY_CHECK
-		// If distance of coneCenter to the bounding box center is more than 16x the bounding box extent, the cluster is also invalid
-		// This is mostly a safety measure - if triangles are nearly parallel to coneAxis, t may become very large and unstable
-		const float aabbSize = length(aabbMax - aabbMin);
-		const float coneCenterToCenterDistance = length(f3Tov3(mesh->clusters[i].coneCenter) - center);
-
-		if (coneCenterToCenterDistance > (16 * aabbSize))
-			validCluster = false;
-
-		mesh->clusters[i].valid = validCluster;
 	}
 }
 

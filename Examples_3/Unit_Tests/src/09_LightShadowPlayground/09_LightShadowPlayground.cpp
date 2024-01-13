@@ -6943,31 +6943,6 @@ class LightShadowPlayground: public IApp
 		batchChunk->currentDrawCallCount = 0;
 	}
 
-	// Determines if the cluster can be safely culled performing quick cone-based test on the CPU.
-	// Since the triangle filtering kernel operates with 2 views in the same pass, this method must
-	// only cull those clusters that are not visible from ANY of the views (camera and shadow views).
-	bool cullCluster(const Cluster* cluster, vec3 eyes[NUM_CULLING_VIEWPORTS], uint32_t validNum)
-	{
-		// Invalid clusters can't be safely culled using the cone based test
-		if (cluster->valid)
-		{
-			uint visibility = 0;
-			for (uint32_t i = 0; i < validNum; i++)
-			{
-				// We move camera position into object space
-				vec3 testVec = normalize(eyes[i] - f3Tov3(cluster->coneCenter));
-
-				// Check if we are inside the cone
-				if (dot(testVec, f3Tov3(cluster->coneAxis)) < cluster->coneAngleCosine)
-				{
-					visibility |= (1 << i);
-				}
-			}
-			return (visibility == 0);
-		}
-		return false;
-	}
-
 	void drawVisibilityBufferPass(Cmd* cmd)
 	{
 		RenderTargetBarrier barriers[] = { { pRenderTargetVBPass, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET } };
